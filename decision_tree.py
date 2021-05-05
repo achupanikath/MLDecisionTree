@@ -139,9 +139,10 @@ class DecisionTree:
         
         Returns: a DecisionNode or LeafNode representing the tree
         """
-        #
-        # fill in the function body here!
-        #
+        #base case return LeafNode(if entropy is less than acceptable threshold)
+        #recursive case(call pick attribute, DecisionNode(picked attribute))
+        nextsplit(examples)
+
         return None  # fix this line!
     
     def classify(self, example):
@@ -157,6 +158,59 @@ class DecisionTree:
         #
         return "hello", 0.42  # fix this line!
 
+    def nextsplit(dataset):
+        split = dict()
+        IG = -float("inf")
+        
+        leftChild = []
+        rightChild = []
+
+        attr_list = dataset[0].keys()
+        vals = []
+        for key in attr_list:
+            if key != 'town' and key != '2020_label':
+                for i in range(0,len(dataset)):
+                    val.append(dataset[i][key])
+                vals = list(set(vals))#unique list of values for a particular attribute
+                for threshold in vals:
+                    leftChild, rightChild = splitter(dataset, key, threshold)
+                    if len(leftChild) > 0 and len(rightChild) > 0:
+                        tot = pullData(dataset)
+                        left = pullData(leftChild)
+                        right = pullData(rightChild)
+                        ig = infoGain(tot, left, right)
+                        if ig > IG:
+                            split["attribute"] = key
+                            split["leftChild"] = leftChild
+                            split["rightChild"]= rightChild
+                            split["infogain"] = ig
+                            IG = ig
+                            split["threshold"] = threshold
+        return split
+
+    def pullData(data):
+        arrayData = []
+        for i in range(0,len(data)):
+            arrayData.append(data[i]['2020_label'])
+        return arrayData
+
+    def splitter(data, key, threshold):
+        larray = []
+        rarray = []
+
+        for i in range(0, len(data)):
+            if data[i][key] > threshold:
+                rarray.append(data[i])
+            else:
+                larray.append(data[i])
+        return larray,rarray
+
+    def infoGain(parent, left, right):
+        lweight = len(left)/len(parent)
+        rweight = len(right)/len(parent)
+        infogain = entropy(parent) - (lweight*entropy(left)+rweight*entropy(right))
+        return infogain
+        
     def __str__(self):
         """String representation of tree, calls _ascii_tree()."""
         ln_bef, ln, ln_aft = self._ascii_tree(self.root)
