@@ -1,6 +1,6 @@
 import csv
 import random
-
+import math
 
 def read_data(csv_path):
     """Read in the training data from a csv file.
@@ -141,10 +141,14 @@ class DecisionTree:
         """
         #base case return LeafNode(if entropy is less than acceptable threshold)
         #recursive case(call pick attribute, DecisionNode(picked attribute))
-        nextsplit(examples)
+        best_split = self.nextsplit(examples)
+        # if best_split["infogain"]>0:
+        #     lsub = self.learn_tree(best_split['leftchild']) #recursive call to make the left sub tree
+        #     rdub = self.learn_tree(best_split["rightchild"])#recursive call to make the right tree\
+        #     return DecisionNode(best_split["attribute"],best_split["threshold"],best_split["leftchild"],best_split["rightchild"],best_split["misschild"])
+        print("Test", best_split)
+        return None
 
-        return None  # fix this line!
-    
     def classify(self, example):
         """Perform inference on a single example.
 
@@ -158,7 +162,7 @@ class DecisionTree:
         #
         return "hello", 0.42  # fix this line!
 
-    def nextsplit(dataset):
+    def nextsplit(self, dataset):
         split = dict()
         IG = -float("inf")
         
@@ -170,15 +174,16 @@ class DecisionTree:
         for key in attr_list:
             if key != 'town' and key != '2020_label':
                 for i in range(0,len(dataset)):
-                    val.append(dataset[i][key])
+                    if dataset[i][key]:
+                        vals.append(dataset[i][key])
                 vals = list(set(vals))#unique list of values for a particular attribute
                 for threshold in vals:
-                    leftChild, rightChild = splitter(dataset, key, threshold)
+                    leftChild, rightChild = self.splitter(dataset, key, threshold)
                     if len(leftChild) > 0 and len(rightChild) > 0:
-                        tot = pullData(dataset)
-                        left = pullData(leftChild)
-                        right = pullData(rightChild)
-                        ig = infoGain(tot, left, right)
+                        tot = self.pullData(dataset)
+                        left = self.pullData(leftChild)
+                        right = self.pullData(rightChild)
+                        ig = self.infoGain(tot, left, right)
                         if ig > IG:
                             split["attribute"] = key
                             split["leftChild"] = leftChild
@@ -188,29 +193,39 @@ class DecisionTree:
                             split["threshold"] = threshold
         return split
 
-    def pullData(data):
+    def pullData(self, data):
         arrayData = []
         for i in range(0,len(data)):
             arrayData.append(data[i]['2020_label'])
         return arrayData
 
-    def splitter(data, key, threshold):
+    def splitter(self, data, key, threshold):
         larray = []
         rarray = []
 
         for i in range(0, len(data)):
-            if data[i][key] > threshold:
-                rarray.append(data[i])
-            else:
-                larray.append(data[i])
+            if data[i][key]:
+                if data[i][key] > threshold:
+                    rarray.append(data[i])
+                else:
+                    larray.append(data[i])
         return larray,rarray
 
-    def infoGain(parent, left, right):
+    def infoGain(self, parent, left, right):
         lweight = len(left)/len(parent)
         rweight = len(right)/len(parent)
-        infogain = entropy(parent) - (lweight*entropy(left)+rweight*entropy(right))
+        infogain = self.entropy(parent) - (lweight*self.entropy(left)+rweight*self.entropy(right))
         return infogain
-        
+
+    def entropy(self, arr):
+        label = list(set(arr))
+        entropy = 0.0
+        for item in label:
+            freq = arr.count(item)
+            prob = freq/len(arr)
+            entropy+= (-prob)* math.log2(prob)
+        return entropy
+
     def __str__(self):
         """String representation of tree, calls _ascii_tree()."""
         ln_bef, ln, ln_aft = self._ascii_tree(self.root)
