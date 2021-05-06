@@ -149,7 +149,9 @@ class DecisionTree:
             lsub = self.nextsplit(best_split["leftChild"])
             lthresh = lsub["infogain"]#infogain of left sub tree 
             rsub = self.nextsplit(best_split["rightChild"])
+
             rthresh = rsub["infogain"]#infogain of right child
+            print(rthresh)
             if lthresh > rthresh:
                 return DecisionNode(lsub['attribute'],lsub['threshold'],self.learn_tree(lsub['leftChild']),self.learn_tree(lsub['rightChild']),lsub['missChild'])
             else:
@@ -159,6 +161,7 @@ class DecisionTree:
             lthresh = lsub["infogain"]#infogain of left sub tree 
             rsub = self.nextsplit(best_split["rightChild"])
             rthresh = rsub["infogain"]#infogain of right child
+            print(rthresh)
             if len(best_split['leftChild']) < self.min_leaf_count or len(best_split['rightChild']) < self.min_leaf_count:
                 return LeafNode(self.labelfinder(examples),len(examples),len(examples))
             elif lthresh > rthresh:
@@ -186,6 +189,12 @@ class DecisionTree:
         #
         # fill in the function body here!
         #
+        #use root to iterate through the tree
+        #when advancing a node down, check if we are going to a decision node or a leaf node 
+        #if leaf node -> check predicted class as that is our assumed answer
+        #if decision node, see if conditon is met -> if yes we get a leaf node, if not then we move to the next decision node 
+
+
         return "hello", 0.42  # fix this line!
 
     def nextsplit(self, dataset):
