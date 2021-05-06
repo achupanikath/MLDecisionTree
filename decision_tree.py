@@ -125,6 +125,8 @@ class DecisionTree:
         self.id_name = id_name
         self.class_name = class_name
         self.min_leaf_count = min_leaf_count
+        self.max_depth = 10
+        self.cur_depth = 0
 
         # build the tree!
         self.root = self.learn_tree(examples)  
@@ -139,15 +141,39 @@ class DecisionTree:
         
         Returns: a DecisionNode or LeafNode representing the tree
         """
-        #base case return LeafNode(if entropy is less than acceptable threshold)
-        #recursive case(call pick attribute, DecisionNode(picked attribute))
+        self.cur_depth += 1
+        
         best_split = self.nextsplit(examples)
-        # if best_split["infogain"]>0:
-        #     lsub = self.learn_tree(best_split['leftchild']) #recursive call to make the left sub tree
-        #     rdub = self.learn_tree(best_split["rightchild"])#recursive call to make the right tree\
-        #     return DecisionNode(best_split["attribute"],best_split["threshold"],best_split["leftchild"],best_split["rightchild"],best_split["misschild"])
-        print("Test", best_split)
-        return None
+        
+        if best_split["infogain"]< 0.9 and self.cur_depth <= self.max_depth :
+            lsub = self.nextsplit(best_split["leftChild"])
+            lthresh = lsub["infogain"]#infogain of left sub tree 
+            rsub = self.nextsplit(best_split["rightChild"])
+            rthresh = rsub["infogain"]#infogain of right child
+            if lthresh > rthresh:
+                return DecisionNode(lsub['attribute'],lsub['threshold'],self.learn_tree(lsub['leftChild']),self.learn_tree(lsub['rightChild']),lsub['missChild'])
+            else:
+               return DecisionNode(rsub['attribute'],rsub['threshold'],self.learn_tree(rsub['leftChild']),self.learn_tree(rsub['rightChild']),rsub['missChild'])
+        else:
+            lsub = self.nextsplit(best_split["leftChild"])
+            lthresh = lsub["infogain"]#infogain of left sub tree 
+            rsub = self.nextsplit(best_split["rightChild"])
+            rthresh = rsub["infogain"]#infogain of right child
+            if len(best_split['leftChild']) < self.min_leaf_count or len(best_split['rightChild']) < self.min_leaf_count:
+                return LeafNode(self.labelfinder(examples),len(examples),len(examples))
+            elif lthresh > rthresh:
+                return LeafNode(self.labelfinder(lsub['leftChild']),len(lsub['leftChild']),len(best_split))
+            else:
+                return LeafNode(self.labelfinder(rsub['rightChild']),len(rsub['rightChild'],len(best_split)))
+
+    def labelfinder(dataset):
+        labellist = self.pullData(dataset)
+        labels = list(set(labellist))#unique list
+        labeldict = dict()
+        for label in labels:
+            freq = labellist.count(label)
+            labeldict[label] = freq
+        return max(labeldict, key = labeldict.get)
 
     def classify(self, example):
         """Perform inference on a single example.
@@ -165,17 +191,19 @@ class DecisionTree:
     def nextsplit(self, dataset):
         split = dict()
         IG = -float("inf")
-        
         leftChild = []
         rightChild = []
 
         attr_list = dataset[0].keys()
         vals = []
+        miss_child = []
         for key in attr_list:
             if key != 'town' and key != '2020_label':
                 for i in range(0,len(dataset)):
                     if dataset[i][key]:
                         vals.append(dataset[i][key])
+                    else:
+                        miss_child.append(dataset[i])
                 vals = list(set(vals))#unique list of values for a particular attribute
                 for threshold in vals:
                     leftChild, rightChild = self.splitter(dataset, key, threshold)
@@ -191,7 +219,9 @@ class DecisionTree:
                             split["infogain"] = ig
                             IG = ig
                             split["threshold"] = threshold
+                            split["missChild"] = miss_child
         return split
+
 
     def pullData(self, data):
         arrayData = []
